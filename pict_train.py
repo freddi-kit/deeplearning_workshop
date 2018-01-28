@@ -72,4 +72,4 @@ for e in range(epoch):
 
         print(loss.data)
 
-    serializers.save_xpz('model.xpz',net)
+    serializers.save_npz('model.xpz',net)
