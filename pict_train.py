@@ -10,7 +10,7 @@ from chainer.datasets import mnist
 
 GPU = -1
 
-batch = 10
+batch = 5
 argv = sys.argv
 input_size = int(argv[1])
 
@@ -20,16 +20,15 @@ for i in argv[2].split(','):
     network_sizes.append(int(i))
 
 dir_train = argv[3]+'/'
-dir_lists = os.listdir(dir_train)
+dir_lists = sorted(os.listdir(dir_train))
 
-epoch = 1000
+epoch = 500
 
 net = Network(network_sizes,len(dir_lists))
 optimizer = optimizers.SGD()
 optimizer.setup(net)
 
 if GPU >= 0:
-    gpu_device = 0
     cuda.get_device(GPU).use()
     net.to_gpu(GPU)
     xp = cuda.cupy
@@ -66,7 +65,7 @@ for e in range(epoch):
 
     for i in range(0,len(train_data_sub),batch):
         x = Variable(xp.asarray(train_data_sub[i:i+batch],dtype=xp.float32))
-        t = Variable(xp.asarray(train_label_sub[i:i+batch],dtype=xp.int32))
+        t = Variable(xp.asarray(train_label_sub[i:i+batch]))
         y,loss = net(x,t)
         net.cleargrads()
         loss.backward()
@@ -74,4 +73,4 @@ for e in range(epoch):
 
         print(loss.data)
     if e % 10 == 0:
-        serializers.save_npz('model/model'+str(e)+'.npz',net)
+        serializers.save_npz('model/model.npz',net)
