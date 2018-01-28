@@ -2,6 +2,7 @@ import sys,os
 from PIL import Image
 from network import Network
 from chainer import Variable,optimizers,serializers,cuda
+from chainer import functions as F
 import numpy as np
 
 import random
@@ -11,7 +12,7 @@ GPU = -1
 
 batch = 10
 argv = sys.argv
-ixput_size = int(argv[1])
+input_size = int(argv[1])
 
 network_sizes = []
 
@@ -48,7 +49,7 @@ for i in dir_lists:
     sub_dirs = os.listdir(argv[3]+'/'+i+'/')
     for j in xp.random.permutation(range(len(sub_dirs))):
         img = Image.open(argv[3]+'/'+i+'/'+sub_dirs[j])
-        img = img.resize((ixput_size,ixput_size)).convert('RGB')
+        img = img.resize((input_size,input_size)).convert('RGB')
         img = xp.asarray(img,dtype=xp.float32).transpose((2,0,1))/255.
         train_data += [img]
         train_label += [dir_lists.index(i)]
@@ -71,5 +72,5 @@ for e in range(epoch):
         optimizer.update()
 
         print(loss.data)
-
-    serializers.save_npz('model.xpz',net)
+    if e % 10 == 0:
+        serializers.save_npz('model'+str(e)+'.npz',net)

@@ -6,6 +6,7 @@ import math
 class Network(chainer.Chain):
     def __init__(self,sizes,output):
         super(Network, self).__init__()
+        w = math.sqrt(2)
         links=[]
         c_k,c_s,c_p = 3,3,1
         self.m_k,self.m_s,self.m_p = 3,1,1
