@@ -22,7 +22,7 @@ for i in argv[2].split(','):
 dir_train = argv[3]+'/'
 dir_lists = os.listdir(dir_train)
 
-epoch = 100
+epoch = 1000
 
 net = Network(network_sizes,len(dir_lists))
 optimizer = optimizers.SGD()
@@ -58,6 +58,7 @@ for i in dir_lists:
 for e in range(epoch):
     train_data_sub = []
     train_label_sub = []
+
     for i in xp.random.permutation(range(len(train_data))):
         train_data_sub += [train_data[i]]
         train_label_sub += [train_label[i]]
@@ -65,7 +66,7 @@ for e in range(epoch):
 
     for i in range(0,len(train_data_sub),batch):
         x = Variable(xp.asarray(train_data_sub[i:i+batch],dtype=xp.float32))
-        t = Variable(xp.asarray(train_label_sub[i:i+batch]))
+        t = Variable(xp.asarray(train_label_sub[i:i+batch],dtype=xp.int32))
         y,loss = net(x,t)
         net.cleargrads()
         loss.backward()
@@ -73,4 +74,4 @@ for e in range(epoch):
 
         print(loss.data)
     if e % 10 == 0:
-        serializers.save_npz('model'+str(e)+'.npz',net)
+        serializers.save_npz('model/model'+str(e)+'.npz',net)
