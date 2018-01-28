@@ -1,18 +1,17 @@
 import sys,os
 from PIL import Image
 from network import Network
-from chainer import Variable,optimizers
+from chainer import Variable,optimizers,serializers,cuda
 import numpy as np
+
 import random
 from chainer.datasets import mnist
 
-
+GPU = -1
 
 batch = 10
-
 argv = sys.argv
-
-input_size = int(argv[1])
+ixput_size = int(argv[1])
 
 network_sizes = []
 
@@ -22,11 +21,21 @@ for i in argv[2].split(','):
 dir_train = argv[3]+'/'
 dir_lists = os.listdir(dir_train)
 
-epoch = 1000
+epoch = 100
 
 net = Network(network_sizes,len(dir_lists))
 optimizer = optimizers.SGD()
 optimizer.setup(net)
+
+if GPU >= 0:
+    gpu_device = 0
+    cuda.get_device(GPU).use()
+    net.to_gpu(GPU)
+    xp = cuda.cupy
+
+
+else:
+    xp = np
 
 
 train_data = []
@@ -37,41 +46,30 @@ test_label = []
 
 for i in dir_lists:
     sub_dirs = os.listdir(argv[3]+'/'+i+'/')
-    for j in np.random.permutation(range(len(sub_dirs))):
+    for j in xp.random.permutation(range(len(sub_dirs))):
         img = Image.open(argv[3]+'/'+i+'/'+sub_dirs[j])
-        img = img.resize((input_size,input_size)).convert('RGB')
-        img = np.asarray(img,dtype=np.float32).transpose((2,0,1))/255.
+        img = img.resize((ixput_size,ixput_size)).convert('RGB')
+        img = xp.asarray(img,dtype=xp.float32).transpose((2,0,1))/255.
         train_data += [img]
         train_label += [dir_lists.index(i)]
-'''
-train, test = mnist.get_mnist(withlabel=True, ndim=2)
 
-
-for i in range(len(train)):
-    m = 0
-    for j in np.random.permutation(range(len(train))):
-        img = np.asarray([train[j][0]],dtype=np.float32)
-        train_data += [img]
-        train_label += [np.asarray(train[j][1])]
-        m+=1
-        if m >= max_train:
-            break
-'''
 
 for e in range(epoch):
     train_data_sub = []
     train_label_sub = []
-    for i in np.random.permutation(range(len(train_data))):
+    for i in xp.random.permutation(range(len(train_data))):
         train_data_sub += [train_data[i]]
         train_label_sub += [train_label[i]]
     print('epoch',e)
 
     for i in range(0,len(train_data_sub),batch):
-        x = Variable(np.asarray(train_data_sub[i:i+batch],dtype=np.float32))
-        t = Variable(np.asarray(train_label_sub[i:i+batch]))
+        x = Variable(xp.asarray(train_data_sub[i:i+batch],dtype=xp.float32))
+        t = Variable(xp.asarray(train_label_sub[i:i+batch]))
         y,loss = net(x,t)
         net.cleargrads()
         loss.backward()
         optimizer.update()
 
         print(loss.data)
+
+    serializers.save_xpz('model.xpz',net)
